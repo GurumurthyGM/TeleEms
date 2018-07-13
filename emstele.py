@@ -64,7 +64,7 @@ def handle(msg):
     past_time = present_time
 
 
-TOKEN = '217271588:AAGniXAC780j3FSkPu_mzIeKE9-G0iSLSKo'  # get token from command-line
+TOKEN = ''  # get token from command-line
 
 bot = telepot.Bot(TOKEN)
 bot.message_loop(handle)
