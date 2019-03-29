@@ -1,0 +1,93 @@
+"""#!/usr/bin/python"""
+# -*- coding: utf-8 -*-
+# yum install python-setuptools
+# easy_install pip
+# pip install flask
+# pip install python-telegram-bot
+# to run the script --> nohup python teleflask.py &
+# In EMS UI enter the URL in sms settings(Alert server configuration) --> http://localhost:5000/teleflask?text={2}&id=-173116895
+
+import telegram
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, InlineQueryHandler, CallbackQueryHandler
+from telegram import InlineQueryResultArticle, ChatAction, InputTextMessageContent, InlineKeyboardButton, InlineKeyboardMarkup
+from flask import Flask, redirect, url_for, request
+from thread import start_new_thread
+
+
+Q = [] #Que to store and dispatch msgs.
+
+botapi = 'BotToken'
+
+updater = Updater(token=botapi)
+dispatcher = updater.dispatcher 
+
+global bot
+bot = telegram.Bot(token=botapi)
+
+
+def sender(id, text):
+	try:
+		text = text.encode('utf-8')
+		txt=text.replace(',','\n')
+		if "false" in txt:
+			text=txt.replace('false','\xF0\x9F\x94\xB4')
+			keyboard = [[InlineKeyboardButton("Ack", callback_data='1')]]
+			reply_markup = InlineKeyboardMarkup(keyboard)
+		else:
+			text=txt.replace('true','\xE2\x9C\x85')
+			reply_markup = None
+		bot.sendMessage(chat_id=id, text=text, reply_markup=reply_markup)
+	except Exception as err:
+		print (err)
+
+def button(bot, update):
+	try:
+		query = update.callback_query
+		if query.data == '1':
+			ack = "Ack-" + update.callback_query.from_user.first_name
+			keyboard = [[InlineKeyboardButton(ack, callback_data='0')]]
+			reply_markup = InlineKeyboardMarkup(keyboard)
+		else :
+			unack = "UnAck-" + update.callback_query.from_user.first_name
+			keyboard = [[InlineKeyboardButton(unack, callback_data='1')]]
+			reply_markup = InlineKeyboardMarkup(keyboard)
+		bot.editMessageReplyMarkup(chat_id=query.message.chat_id, message_id = query.message.message_id, reply_markup=reply_markup)
+	except Exception as err:
+		print (err)
+
+
+def dispatch():
+	while True:
+		try:
+			global Q
+			if  Q:
+				msg = Q.pop(0)
+				sender(*msg)
+		except Exception as err:
+			print(msg,err)
+
+app = Flask(__name__)
+
+
+@app.route('/teleflask',methods = ['GET'])
+def teleflask():
+	text = request.args.get('text')
+	chat_id = request.args.get('id')
+	global Q
+	Q.append((chat_id,text))
+	return "OK"
+
+@app.route('/',methods = ['GET'])
+def index():
+	return "<html><head><h1>http://localhost:5000/teleflask?text=<msg>&id=<groupid/userid></h1></head></html>"
+
+def main():
+	start_new_thread(dispatch,())
+	button_handler = CallbackQueryHandler(button)
+	dispatcher.add_handler(button_handler)
+	updater.start_polling()
+	app.run(debug = True)
+	
+
+if __name__ == '__main__':
+	main()
