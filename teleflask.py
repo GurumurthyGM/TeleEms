@@ -6,7 +6,7 @@ from telegram import InlineQueryResultArticle, ChatAction, InputTextMessageConte
 import telegram
 from flask import Flask, redirect, url_for, request
 
-botapi = '217271588:AAGniXAC780j3FSkPu_mzIeKE9-G0iSLSKo' #<Token>
+botapi = '' #<Token>
 
 updater = Updater(token=botapi)
 dispatcher = updater.dispatcher
